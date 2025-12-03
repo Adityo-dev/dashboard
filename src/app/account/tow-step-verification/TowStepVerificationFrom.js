@@ -37,6 +37,7 @@ export default function TwoStepVerificationForm() {
       inputRefs.current[index - 1].focus();
   };
 
+  // Form submission handler
   const onSubmit = async (data) => {
     const otp = data.d1 + data.d2 + data.d3 + data.d4;
     if (otp.length < 4) {
@@ -69,6 +70,26 @@ export default function TwoStepVerificationForm() {
     });
     setLoading(false);
     router.push("/account/profile");
+  };
+
+  // Resend OTP handler
+  const handleResendOtp = async () => {
+    if (!email) {
+      toast.error("Email not found. Please signup again.");
+      return;
+    }
+
+    const toastId = toast.loading("Sending new OTP...");
+    const result = await apiPost("/auth/resend-otp", { email });
+
+    if (!result.success) {
+      toast.error(result.message || "Failed to resend OTP", { id: toastId });
+      return;
+    }
+
+    toast.success(result.message || "OTP resent successfully!", {
+      id: toastId,
+    });
   };
 
   return (
@@ -116,12 +137,12 @@ export default function TwoStepVerificationForm() {
         </button>
         <p className="flex justify-center items-center gap-2 text-[#AAAAAAAA] mt-2">
           Didn’t get the mail?{" "}
-          <Link
-            href="/account/verify-email"
+          <span
+            onClick={handleResendOtp}
             className="text-sm font-semibold text-white cursor-pointer hover:underline"
           >
             Resend
-          </Link>
+          </span>
         </p>
       </form>
     </>
