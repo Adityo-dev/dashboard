@@ -41,7 +41,7 @@ export default function RegisterForm() {
     localStorage.setItem("signupEmail", data.email);
     toast.success(result.message, { id: toastId });
     setLoading(false);
-    router.push("/account/verify-email");
+    router.push("/account/tow-step-verification");
   };
 
   const fields = [
