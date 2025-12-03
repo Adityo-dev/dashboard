@@ -4,44 +4,42 @@ import { useForm } from "react-hook-form";
 import CustomInput from "@/components/account/CustomInput";
 import FromHeader from "@/components/account/FromHeader";
 import Link from "next/link";
-import DividerAndSocialButtons from "@/components/account/DividerAndSocialButtons";
-import { FiMail, FiLock } from "react-icons/fi";
+import { FiMail } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { apiPost } from "@/lib/api";
 
-export default function LoginForm() {
+export default function VerifyEmailForm() {
   const router = useRouter();
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("signupEmail");
+    if (storedEmail) setValue("email", storedEmail);
+  }, [setValue]);
+
   const onSubmit = async (data) => {
     setLoading(true);
-    const toastId = toast.loading("Logging in...");
+    const toastId = toast.loading("Sending verification mail...");
 
-    const result = await apiPost("/auth/login", {
-      email: data.email,
-      password: data.password,
-    });
+    const result = await apiPost("/auth/resend-otp", { email: data.email });
 
     if (!result.success) {
-      toast.error(result.message || "Login failed", { id: toastId });
+      toast.error(result.message || "Something went wrong", { id: toastId });
       setLoading(false);
       return;
     }
 
-    Cookies.set("token", result.data.token, { expires: 7 });
-    Cookies.set("user", JSON.stringify(result.data.user), { expires: 7 });
-
-    toast.success(result.message || "Login successful", { id: toastId });
+    toast.success(result.message, { id: toastId });
     setLoading(false);
-    router.push("/account/profile");
+    router.push("/account/tow-step-verification");
   };
 
   const fields = [
@@ -54,27 +52,14 @@ export default function LoginForm() {
       placeholder: "Enter your email",
       rules: { required: "Email is required" },
     },
-    {
-      id: 2,
-      name: "password",
-      label: "Password",
-      icon: FiLock,
-      type: "password",
-      placeholder: "********",
-      rules: {
-        required: "Password is required",
-        minLength: { value: 6, message: "Minimum 6 characters required" },
-      },
-    },
   ];
 
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <FromHeader
-          title="Log in"
-          subTitle="Welcome Back! 👋"
-          deception="Please log in to your account and start the adventure"
+          title="Verify your email"
+          deception="Enter your email address to receive a verification code."
         />
         <div className="space-y-4">
           {fields.map((f) => (
@@ -95,16 +80,15 @@ export default function LoginForm() {
             disabled={loading}
             className="w-full bg-white text-black font-semibold py-3 hover:bg-gray-200 transition cursor-pointer disabled:opacity-50"
           >
-            {loading ? "Logging in..." : "Sign In"}
+            {loading ? "Sending..." : "Resend Verification Email"}
           </button>
         </div>
-        <div className="text-center text-[#666666] text-sm font-semibold">
-          New on our platform?{" "}
-          <Link href="/account/register" className="text-white ml-1">
-            Create an account
-          </Link>
-        </div>
-        <DividerAndSocialButtons />
+        <Link
+          href="/account/login"
+          className="flex justify-center text-[#666666] font-semibold cursor-pointer"
+        >
+          Skip For Now
+        </Link>
       </form>
     </>
   );
